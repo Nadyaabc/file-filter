@@ -11,4 +11,9 @@ public class ShortStatistic implements Statistic{
     public int getElementsNumber() {
         return elementsNumber;
     }
+
+    @Override
+    public void updateStatistics() {//TODO  реализовать
+
+    }
 }

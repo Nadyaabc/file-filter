@@ -159,4 +159,5 @@ public class ArgumentsAnalyser {
         }
         return true;
     }
+    boolean shouldAppend(){return !rewriteExisting;}
 }

@@ -1,36 +1,51 @@
 package com.nadzeya;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.nio.Buffer;
-import java.util.*;
+import java.io.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class FileInformation {
     ArgumentsAnalyser argumentsAnalyser;
-     List<Statistic> statistic=new ArrayList<>();
-     Map<String, Statistic> fileStatisticMap = new HashMap<>();
-    Map<String, String> fileNamesMap = new HashMap<>();
+    String statisticType;
+    Map<String, Statistic> typeStatisticMap = new HashMap<>();
+    Map<String, String> typeFileNameMap = new HashMap<>();
+    boolean append;
+
     {
-        fileNamesMap.put("int", "integers.txt");
-        fileNamesMap.put("floats", "floats.txt");
-        fileNamesMap.put("string", "strings.txt");
+        typeFileNameMap.put("int", "integers.txt");
+        typeFileNameMap.put("floats", "floats.txt");
+        typeFileNameMap.put("string", "strings.txt");
     }
 
     String path;
-    List<String>dataFiles;
+    List<String> dataFiles;
+
     public FileInformation(ArgumentsAnalyser argumentsAnalyser) {
         this.argumentsAnalyser = argumentsAnalyser;
+        this.dataFiles = argumentsAnalyser.getFiles();
+        this.path = argumentsAnalyser.getPath();
+        this.statisticType = argumentsAnalyser.getStatisticType();
+        this.append= argumentsAnalyser.shouldAppend();
         createStatisticType();
-        if(!argumentsAnalyser.getNamePrefix().isEmpty()){
+        if (!argumentsAnalyser.getNamePrefix().isEmpty()) {
             createFileNames();
         }
-        this.dataFiles=argumentsAnalyser.getFiles();
-        this.path= argumentsAnalyser.getPath();
-    }
-    private void createStatisticType(){
 
+    }
+
+    private void createStatisticType() {
+        if (statisticType.equals("-s")) {
+            typeStatisticMap.put("int", new ShortStatistic());
+            typeStatisticMap.put("float", new ShortStatistic());
+            typeStatisticMap.put("string", new ShortStatistic());
+        } else {
+            typeStatisticMap.put("int", new FullStatistic());
+            typeStatisticMap.put("float", new FullStatistic());
+            typeStatisticMap.put("string", new FullStatistic());
+        }
+
+/*
         if(argumentsAnalyser.getStatisticType().equals("-s")){
             for(Statistic s: statistic){
                 s=new ShortStatistic();
@@ -40,55 +55,54 @@ public class FileInformation {
             for(Statistic s: statistic){
                 s=new FullStatistic();
             }
-        }
+        }*/
     }
-    private void createFileNames(){
-        String prefix=argumentsAnalyser.getNamePrefix();
-        fileNamesMap.replaceAll((k, v) -> prefix + fileNamesMap.get(k));
+
+    private void createFileNames() {
+        String prefix = argumentsAnalyser.getNamePrefix();
+        typeFileNameMap.replaceAll((k, v) -> prefix + typeFileNameMap.get(k));
     }
+
     public void analyseFiles() throws IOException {
+        for (String file:dataFiles)
+            analyseFile(file);
 
-        for (String file:dataFiles){
-            fileStatisticMap.put(file, analyseFile(file));
-        }
     }
 
-    private Statistic analyseFile(String file) throws IOException {
-        try(BufferedReader fileReader = new BufferedReader(new FileReader(file))){
-            String str = fileReader.readLine();
-            String type = checkType(str);
-            switch (type){
-                case "int":
-                    addToResultFile(str, fileNamesMap.get(type));
-
-
-
-
-
-
-
-
-                    break;
-                case "float":
-                    break;
-                case "string":
-                    break;
-                default:
-                    System.out.println("Извините, произошла непредвиденная ошибка. Строка " + str);
+    private void analyseFile(String file) throws IOException {
+        try (BufferedReader fileReader = new BufferedReader(new FileReader(file))) {
+            String str;
+            while((str = fileReader.readLine())!= null){
+                System.out.println("str = " + str);
+                String type = checkType(str);
+                System.out.println(type);
+                addToResultFile(str, typeFileNameMap.get(type));
+                typeStatisticMap.get(type).updateStatistics();
             }
-        }
-        catch (IOException e){
+
+        } catch (IOException e) {
             System.out.println("К сожалению, файл " + file + " не найден.");
         }
 
-        return null;
     }
-    private String checkType(String s){
 
+    private String checkType(String s) {
+        if(s.matches("^-?\\d+$"))
+            return "int";
+        if(s.matches("^-?\\d+(?:\\.\\d+)?(?:[eE][-+]?\\d+)?$"))
+            return "float";
+        return "string";
     }
-    private void addToResultFile(String s, String resultFile){
 
+    private void addToResultFile(String s, String resultFile) throws IOException {
+        try(BufferedWriter writer = new BufferedWriter(new FileWriter(path+resultFile, append))){
+            writer.write(s+"\n");
+        }
+        catch (IOException e){
+            System.out.println("sorry");
+        }
+        finally {
+            append=true;
+        }
     }
-    //считывать инфу оттуда
-    //создать файл если его нет
 }

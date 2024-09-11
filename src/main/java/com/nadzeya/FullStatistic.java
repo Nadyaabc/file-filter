@@ -8,6 +8,12 @@ public class FullStatistic implements Statistic {
 
     }
 
+    @Override
+    public void updateStatistics() {
+
+//TODO  реализовать
+    }
+
     public int getElementsNumber() {
         return elementsNumber;
     }
