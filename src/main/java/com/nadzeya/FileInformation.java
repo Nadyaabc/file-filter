@@ -10,21 +10,24 @@ public class FileInformation {
     String statisticType;
     Map<String, Statistic> typeStatisticMap = new HashMap<>();
     Map<String, String> typeFileNameMap = new HashMap<>();
-    boolean append;
+
 
     {
         typeFileNameMap.put("int", "integers.txt");
-        typeFileNameMap.put("floats", "floats.txt");
+        typeFileNameMap.put("float", "floats.txt");
         typeFileNameMap.put("string", "strings.txt");
     }
-
+    boolean append;
     String path;
     List<String> dataFiles;
 
-    public FileInformation(ArgumentsAnalyser argumentsAnalyser) {
+    public FileInformation(ArgumentsAnalyser argumentsAnalyser){
         this.argumentsAnalyser = argumentsAnalyser;
         this.dataFiles = argumentsAnalyser.getFiles();
-        this.path = argumentsAnalyser.getPath();
+        this.path=argumentsAnalyser.getPath();
+        if(!this.path.isEmpty()){
+           createFilePath();
+        }
         this.statisticType = argumentsAnalyser.getStatisticType();
         this.append= argumentsAnalyser.shouldAppend();
         createStatisticType();
@@ -32,6 +35,14 @@ public class FileInformation {
             createFileNames();
         }
 
+    }
+    private void createFilePath(){
+        System.out.println(getClass().getProtectionDomain().getCodeSource().getLocation().getPath());
+        File directory = new File(getClass().getProtectionDomain().getCodeSource().getLocation().getPath()+path);
+
+        if(!directory.mkdirs()){
+            System.out.println("Извините, произошла ошибка создания пути к файлу");
+        }
     }
 
     private void createStatisticType() {
@@ -44,18 +55,6 @@ public class FileInformation {
             typeStatisticMap.put("float", new FullStatistic());
             typeStatisticMap.put("string", new FullStatistic());
         }
-
-/*
-        if(argumentsAnalyser.getStatisticType().equals("-s")){
-            for(Statistic s: statistic){
-                s=new ShortStatistic();
-            }
-        }
-        else{
-            for(Statistic s: statistic){
-                s=new FullStatistic();
-            }
-        }*/
     }
 
     private void createFileNames() {
@@ -63,7 +62,7 @@ public class FileInformation {
         typeFileNameMap.replaceAll((k, v) -> prefix + typeFileNameMap.get(k));
     }
 
-    public void analyseFiles() throws IOException {
+    public void analyseFiles() throws IOException{
         for (String file:dataFiles)
             analyseFile(file);
 
@@ -75,9 +74,8 @@ public class FileInformation {
             while((str = fileReader.readLine())!= null){
                 System.out.println("str = " + str);
                 String type = checkType(str);
-                System.out.println(type);
                 addToResultFile(str, typeFileNameMap.get(type));
-                typeStatisticMap.get(type).updateStatistics();
+                typeStatisticMap.get(type).updateStatistics(str,type);
             }
 
         } catch (IOException e) {
@@ -95,14 +93,24 @@ public class FileInformation {
     }
 
     private void addToResultFile(String s, String resultFile) throws IOException {
-        try(BufferedWriter writer = new BufferedWriter(new FileWriter(path+resultFile, append))){
+        try(BufferedWriter writer = new BufferedWriter(new FileWriter(resultFile, append))){
             writer.write(s+"\n");
         }
         catch (IOException e){
-            System.out.println("sorry");
+            System.out.println(e.getMessage());
         }
         finally {
             append=true;
+        }
+
+    }
+    public void outputResult(){
+        for (String key : typeStatisticMap.keySet()){
+            if (!typeStatisticMap.get(key).getTypeForStatistics().equals("none")){
+                System.out.print(typeFileNameMap.get(key));
+                typeStatisticMap.get(key).printStatistic();
+            }
+
         }
     }
 }

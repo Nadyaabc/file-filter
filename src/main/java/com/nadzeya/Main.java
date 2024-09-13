@@ -11,13 +11,9 @@ public class Main {
 
         ArgumentsAnalyser argumentsAnalyser = new ArgumentsAnalyser();
         argumentsAnalyser.analyseArgs(args);
-
         FileInformation fileInformation = new FileInformation(argumentsAnalyser);
         fileInformation.analyseFiles();
+        fileInformation.outputResult();
 
-
-        //TODO Проверка наличия аргументов для опций
-        //TODO Обработка некорректных аргументов:
-        //TODO Обработка исключений
     }
 }
